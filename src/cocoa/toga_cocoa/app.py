@@ -208,7 +208,7 @@ class DocumentApp(App):
     def _create_app_commands(self):
         self.interface.commands.add(
             toga.Command(
-                self.select_file(),
+                lambda w: self.select_file(),
                 label='Open...',
                 shortcut='o',
                 group=toga.Group.FILE,
