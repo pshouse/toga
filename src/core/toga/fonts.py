@@ -1,31 +1,36 @@
 # Use the Travertino font definitions as-is
-from travertino.fonts import font, Font as BaseFont
-from travertino.constants import (
-    NORMAL,
-    SYSTEM, MESSAGE,
-    SERIF, SANS_SERIF, CURSIVE, FANTASY, MONOSPACE,
-    ITALIC, OBLIQUE,
-    SMALL_CAPS,
+from travertino.constants import (  # noqa: F401
     BOLD,
+    CURSIVE,
+    FANTASY,
+    ITALIC,
+    MESSAGE,
+    MONOSPACE,
+    NORMAL,
+    OBLIQUE,
+    SANS_SERIF,
+    SERIF,
+    SMALL_CAPS,
+    SYSTEM
 )
-from toga.platform import get_platform_factory
+from travertino.fonts import Font as BaseFont  # noqa: F401
+from travertino.fonts import font  # noqa: F401
+
+
+SYSTEM_DEFAULT_FONT_SIZE = -1
 
 
 class Font(BaseFont):
     def __init__(self, family, size, style=NORMAL, variant=NORMAL, weight=NORMAL):
         super().__init__(family, size, style, variant, weight)
-        self.__impl = None
-
-    @property
-    def _impl(self):
-        if self.__impl is None:
-            self.bind(None)
-        return self.__impl
+        self.factory = None
+        self._impl = None
 
     def bind(self, factory):
-        factory = get_platform_factory(factory)
-        self.__impl = factory.Font(self)
-        return self.__impl
+        if self._impl is None:
+            self.factory = factory
+            self._impl = factory.Font(self)
+        return self._impl
 
-    def measure(self, text, tight=False):
-        return self._impl.measure(text, tight=tight)
+    def measure(self, text, dpi, tight=False):
+        return self._impl.measure(text, dpi=dpi, tight=tight)

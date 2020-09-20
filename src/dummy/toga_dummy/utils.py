@@ -48,11 +48,9 @@ def not_required_on(*args):
     return _dec
 
 
-
 ###########################################################################
 # The event types that can be logged
 ###########################################################################
-
 
 class EventLog:
     # Event types that can be logged
@@ -187,6 +185,9 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         EventLog.reset()
 
+    def reset_event_log(self):
+        EventLog.reset()
+
     def assertFunctionNotPerformed(self, _module, action):
         """Assert that the action function from module was *not* performed.
 
@@ -282,7 +283,7 @@ class TestCase(unittest.TestCase):
 #####
 
     def assertValueSet(self, _widget, attr, value):
-        """Assert that the widget implmentation has set an attribute to a value.
+        """Assert that the widget implementation has set an attribute to a value.
 
         Args:
             _widget: The interface of the widget to check
@@ -310,7 +311,7 @@ class TestCase(unittest.TestCase):
             self.fail('Widget {} is not a logged object'.format(_widget))
 
     def assertValuesSet(self, _widget, attr, values):
-        """Assert that the widget implmentation has been set to multiple values.
+        """Assert that the widget implementation has been set to multiple values.
 
         Args:
             _widget: The interface of the widget to check
@@ -351,8 +352,11 @@ class TestCase(unittest.TestCase):
                 'Widget {} did not retrieve the attribute {!r}; retrieved attributes were {}.'.format(
                     _widget,
                     attr,
-                    ','.join('{!r}'.format(a) for a in sorted(_widget._impl._gets))
-            ))
+                    ','.join(
+                        '{!r}'.format(a) for a in sorted(_widget._impl._gets)
+                    )
+                )
+            )
         except AttributeError:
             self.fail('Widget {} is not a logged object'.format(_widget))
 

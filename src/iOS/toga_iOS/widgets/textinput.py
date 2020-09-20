@@ -1,9 +1,13 @@
-from rubicon.objc import objc_method, CGSize, NSObject, SEL
+from rubicon.objc import SEL, CGSize, objc_method
 from travertino.size import at_least
 
-from toga_iOS.libs import NSTextAlignment, UITextField, UITextBorderStyle, UIControlEventEditingChanged
-
-from .base import Widget
+from toga_iOS.libs import (
+    NSTextAlignment,
+    UIControlEventEditingChanged,
+    UITextBorderStyle,
+    UITextField
+)
+from toga_iOS.widgets.base import Widget
 
 
 class TogaTextField(UITextField):
@@ -45,9 +49,9 @@ class TextInput(Widget):
         if value:
             self.native.textAlignment = NSTextAlignment(value)
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def rehint(self):
         # Height of a text input is known.

@@ -1,7 +1,14 @@
-from rubicon.objc import objc_method, SEL
 from travertino.size import at_least
 
-from toga_cocoa.libs import *
+from toga_cocoa.libs import (
+    SEL,
+    NSButton,
+    NSOffState,
+    NSOnState,
+    NSRoundedBezelStyle,
+    NSSwitchButton,
+    objc_method
+)
 
 from .base import Widget
 
@@ -27,7 +34,11 @@ class Switch(Widget):
         self.add_constraints()
 
     def set_label(self, label):
-        self.native.title = label
+        self.native.title = self.interface.label
+
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def set_is_on(self, value):
         if value is True:

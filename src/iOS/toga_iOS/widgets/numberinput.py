@@ -1,18 +1,17 @@
 from ctypes import c_int
 from decimal import Decimal
 
-from rubicon.objc import objc_method, CGSize, NSObject, SEL, NSRange, send_message
+from rubicon.objc import SEL, CGSize, NSRange, objc_method, send_message
 from travertino.size import at_least
 
-from toga_iOS.libs import(
+from toga_iOS.libs import (
     NSTextAlignment,
     UIControlEventEditingChanged,
     UIKeyboardType,
     UITextBorderStyle,
     UITextField
 )
-
-from .base import Widget
+from toga_iOS.widgets.base import Widget
 
 
 class TogaNumericTextField(UITextField):
@@ -29,10 +28,11 @@ class TogaNumericTextField(UITextField):
     def textField_shouldChangeCharactersInRange_replacementString_(self, textField, textRange: NSRange, chars) -> bool:
         # chars will be zero length in the case of a deletion
         # otherwise, accept any number, or '.' (as long as this is the first one)
-        if (len(chars) == 0
-                    or chars.isdigit()
-                    or (chars == '.' and '.' not in self.text)
-                ):
+        if (
+            len(chars) == 0
+            or chars.isdigit()
+            or (chars == '.' and '.' not in self.text)
+        ):
             return True
         return False
 
@@ -89,9 +89,9 @@ class NumberInput(Widget):
         if value:
             self.native.textAlignment = NSTextAlignment(value)
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def rehint(self):
         # Height of a text input is known.

@@ -1,66 +1,127 @@
-from rubicon.objc import *
+from toga_cocoa.libs import (
+    NSAffineTransform,
+    NSBezierPath,
+    NSColor,
+    NSCompositingOperationSourceOver,
+    NSFont,
+    NSFontAttributeName,
+    NSForegroundColorAttributeName,
+    NSGraphicsContext,
+    NSImageInterpolationHigh,
+    NSImageView,
+    NSMutableDictionary,
+    NSPoint,
+    NSRect,
+    NSSize,
+    NSTableCellView,
+    NSTextField,
+    NSTextFieldCell,
+    NSLayoutAttributeLeft,
+    NSLayoutAttributeRight,
+    NSLayoutAttributeCenterY,
+    NSLayoutAttributeWidth,
+    NSLayoutAttributeNotAnAttribute,
+    NSLayoutConstraint,
+    NSLayoutRelationEqual,
+    NSLineBreakMode,
+    at,
+    objc_method,
+)
 
-from toga_cocoa.libs import *
 
+class TogaIconView(NSTableCellView):
 
-class TogaIconCell(NSTextFieldCell):
     @objc_method
-    def drawWithFrame_inView_(self, cellFrame: NSRect, view) -> None:
-        # The data to display.
-        try:
-            label = self.objectValue.attrs['label']
-            icon = self.objectValue.attrs['icon']
-        except AttributeError:
-            # Value is a simple string.
-            label = self.objectValue
-            icon = None
+    def setup(self):
+        self.imageView = NSImageView.alloc().init()
+        self.textField = NSTextField.alloc().init()
 
-        if icon and icon.native:
-            offset = 28.5
+        self.textField.cell.lineBreakMode = NSLineBreakMode.byTruncatingTail
+        self.textField.bordered = False
+        self.textField.drawsBackground = False
 
-            NSGraphicsContext.currentContext.saveGraphicsState()
-            yOffset = cellFrame.origin.y
-            if view.isFlipped:
-                xform = NSAffineTransform.transform()
-                xform.translateXBy(8, yBy=cellFrame.size.height)
-                xform.scaleXBy(1.0, yBy=-1.0)
-                xform.concat()
-                yOffset = 0.5 - cellFrame.origin.y
+        self.imageView.translatesAutoresizingMaskIntoConstraints = False
+        self.textField.translatesAutoresizingMaskIntoConstraints = False
 
-            interpolation = NSGraphicsContext.currentContext.imageInterpolation
-            NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh
+        self.addSubview(self.imageView)
+        self.addSubview(self.textField)
 
-            icon.native.drawInRect(
-                NSRect(NSPoint(cellFrame.origin.x, yOffset), NSSize(16.0, 16.0)),
-                fromRect=NSRect(NSPoint(0, 0), NSSize(icon.native.size.width, icon.native.size.height)),
-                operation=NSCompositingOperationSourceOver,
-                fraction=1.0
+        # center icon vertically in cell
+        self.iv_vertical_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.imageView, NSLayoutAttributeCenterY,
+            NSLayoutRelationEqual,
+            self, NSLayoutAttributeCenterY,
+            1, 0
             )
+        # align left edge of icon with left edge of cell
+        self.iv_left_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.imageView, NSLayoutAttributeLeft,
+            NSLayoutRelationEqual,
+            self, NSLayoutAttributeLeft,
+            1, 0
+        )
+        # set fixed width of icon
+        self.iv_width_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.imageView, NSLayoutAttributeWidth,
+            NSLayoutRelationEqual,
+            None, NSLayoutAttributeNotAnAttribute,
+            1, 16
+        )
+        # align text vertically in cell
+        self.tv_vertical_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.textField, NSLayoutAttributeCenterY,
+            NSLayoutRelationEqual,
+            self, NSLayoutAttributeCenterY,
+            1, 0,
+        )
+        # align left edge of text with right edge of icon
+        self.tv_left_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.textField, NSLayoutAttributeLeft,
+            NSLayoutRelationEqual,
+            self.imageView, NSLayoutAttributeRight,
+            1, 5  # 5 pixels padding between icon and text
+        )
+        # align right edge of text with right edge of cell
+        self.tv_right_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA:E501
+            self.textField, NSLayoutAttributeRight,
+            NSLayoutRelationEqual,
+            self, NSLayoutAttributeRight,
+            1, -5
+        )
 
-            NSGraphicsContext.currentContext.imageInterpolation = interpolation
-            NSGraphicsContext.currentContext.restoreGraphicsState()
+        self.addConstraint(self.iv_vertical_constraint)
+        self.addConstraint(self.iv_left_constraint)
+        self.addConstraint(self.iv_width_constraint)
+        self.addConstraint(self.tv_vertical_constraint)
+        self.addConstraint(self.tv_left_constraint)
+        self.addConstraint(self.tv_right_constraint)
+
+    @objc_method
+    def setImage_(self, image):
+
+        if not self.imageView:
+            self.setup()
+
+        if image:
+            self.imageView.image = image.resizeTo(16)
+            # set icon width to 16
+            self.iv_width_constraint.constant = 16
+            # add padding between icon and text
+            self.tv_left_constraint.constant = 5
         else:
-            # No icon; just the text label
-            offset = 5
+            self.imageView.image = None
+            # set icon width to 0
+            self.iv_width_constraint.constant = 0
+            # remove padding between icon and text
+            self.tv_left_constraint.constant = 0
 
-        if label:
-            # Find the right color for the text
-            if self.isHighlighted():
-                primaryColor = NSColor.alternateSelectedControlTextColor
-            else:
-                if False:
-                    primaryColor = NSColor.disabledControlTextColor
-                else:
-                    primaryColor = NSColor.textColor
+    @objc_method
+    def setText_(self, text):
 
-            textAttributes = NSMutableDictionary.alloc().init()
-            textAttributes[NSForegroundColorAttributeName] = primaryColor
-            textAttributes[NSFontAttributeName] = NSFont.systemFontOfSize(13)
+        if not self.imageView:
+            self.setup()
 
-            at(label).drawAtPoint(
-                NSPoint(cellFrame.origin.x + offset, cellFrame.origin.y),
-                withAttributes=textAttributes
-            )
+        self.textField.stringValue = text
 
 
 # A TogaDetailedCell contains:

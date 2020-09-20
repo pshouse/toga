@@ -1,16 +1,27 @@
-from travertino.layout import Viewport
-from rubicon.objc import objc_method, NSMakeRect, NSMutableArray, NSObject, SEL
-
 from toga.command import Command as BaseCommand
-
 from toga_cocoa import dialogs
 from toga_cocoa.libs import (
-    NSScreen, NSToolbar, NSToolbarItem, NSTitledWindowMask,
-    NSClosableWindowMask, NSResizableWindowMask, NSMiniaturizableWindowMask,
-    NSWindow, NSBackingStoreBuffered, NSLayoutConstraint,
-    NSLayoutAttributeBottom, NSLayoutAttributeLeft, NSLayoutAttributeRight,
-    NSLayoutAttributeTop, NSLayoutRelationGreaterThanOrEqual,
-    NSLayoutRelationEqual, NSSize
+    SEL,
+    NSBackingStoreBuffered,
+    NSClosableWindowMask,
+    NSLayoutAttributeBottom,
+    NSLayoutAttributeLeft,
+    NSLayoutAttributeRight,
+    NSLayoutAttributeTop,
+    NSLayoutConstraint,
+    NSLayoutRelationGreaterThanOrEqual,
+    NSMakeRect,
+    NSMiniaturizableWindowMask,
+    NSMutableArray,
+    NSObject,
+    NSResizableWindowMask,
+    NSScreen,
+    NSSize,
+    NSTitledWindowMask,
+    NSToolbar,
+    NSToolbarItem,
+    NSWindow,
+    objc_method
 )
 
 
@@ -21,15 +32,19 @@ def toolbar_identifier(cmd):
 class CocoaViewport:
     def __init__(self, view):
         self.view = view
-        self.dpi = 96  # FIXME This is almost certainly wrong...
+        # macOS always renders at 96dpi. Scaling is handled
+        # transparently at the level of the screen compositor.
+        self.dpi = 96
+        self.baseline_dpi = self.dpi
 
     @property
     def width(self):
-        return self.view.frame.size.width
+        # If `view` is `None`, we'll treat this a 0x0 viewport.
+        return 0 if self.view is None else self.view.frame.size.width
 
     @property
     def height(self):
-        return self.view.frame.size.height
+        return 0 if self.view is None else self.view.frame.size.height
 
 
 class WindowDelegate(NSObject):
@@ -41,8 +56,14 @@ class WindowDelegate(NSObject):
     def windowDidResize_(self, notification) -> None:
         if self.interface.content:
             # print()
-            # print("Window resize", (notification.object.contentView.frame.size.width, notification.object.contentView.frame.size.height))
-            if notification.object.contentView.frame.size.width > 0.0 and notification.object.contentView.frame.size.height > 0.0:
+            # print("Window resize", (
+            #   notification.object.contentView.frame.size.width,
+            #   notification.object.contentView.frame.size.height
+            # ))
+            if (
+                notification.object.contentView.frame.size.width > 0.0
+                and notification.object.contentView.frame.size.height > 0.0
+            ):
                 # Set the window to the new size
                 self.interface.content.refresh()
 
@@ -71,25 +92,24 @@ class WindowDelegate(NSObject):
     @objc_method
     def toolbar_itemForItemIdentifier_willBeInsertedIntoToolbar_(self, toolbar, identifier, insert: bool):
         "Create the requested toolbar button"
-        _item = NSToolbarItem.alloc().initWithItemIdentifier_(identifier)
+        native = NSToolbarItem.alloc().initWithItemIdentifier_(identifier)
         try:
             item = self.interface._impl._toolbar_items[str(identifier)]
-            impl = item.bind(self.interface.factory)
             if item.label:
-                _item.setLabel(item.label)
-                _item.setPaletteLabel(item.label)
+                native.setLabel(item.label)
+                native.setPaletteLabel(item.label)
             if item.tooltip:
-                _item.setToolTip(item.tooltip)
-            if impl.icon:
-                _item.setImage(impl.icon.bind(self.interface.factory).native)
+                native.setToolTip(item.tooltip)
+            if item.icon:
+                native.setImage(item.icon._impl.native)
 
-            item._widgets.append(_item)
+            item._impl.native.append(native)
 
-            _item.setTarget_(self)
-            _item.setAction_(SEL('onToolbarButtonPress:'))
+            native.setTarget_(self)
+            native.setAction_(SEL('onToolbarButtonPress:'))
         except KeyError:
             pass
-        return _item
+        return native
 
     @objc_method
     def validateToolbarItem_(self, item) -> bool:
@@ -166,24 +186,28 @@ class Window:
         self.native.contentView = widget.native
 
         # Set the widget's viewport to be based on the window's content.
-        widget.viewport = CocoaViewport(widget.native)
+        widget.viewport = CocoaViewport(view=widget.native)
 
         # Add all children to the content widget.
         for child in widget.interface.children:
             child._impl.container = widget
 
-        # Enforce a minimum size based on the content
-        self._min_width_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        # Enforce a minimum size based on the content size.
+        # This is enforcing the *minimum* size; the window might actually be
+        # bigger. If the window is resizable, using >= allows the window to
+        # be dragged larged; if not resizable, it enforces the smallest
+        # size that can be programmattically set on the window.
+        self._min_width_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA: E501
             widget.native, NSLayoutAttributeRight,
-            NSLayoutRelationGreaterThanOrEqual if self.interface.resizeable else NSLayoutRelationEqual,
+            NSLayoutRelationGreaterThanOrEqual,
             widget.native, NSLayoutAttributeLeft,
             1.0, 100
         )
         widget.native.addConstraint(self._min_width_constraint)
 
-        self._min_height_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        self._min_height_constraint = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # NOQA: E501
             widget.native, NSLayoutAttributeBottom,
-            NSLayoutRelationGreaterThanOrEqual if self.interface.resizeable else NSLayoutRelationEqual,
+            NSLayoutRelationGreaterThanOrEqual,
             widget.native, NSLayoutAttributeTop,
             1.0, 100
         )
@@ -198,7 +222,7 @@ class Window:
     def set_size(self, size):
         frame = self.native.frame
         frame.size = NSSize(self.interface._size[0], self.interface._size[1])
-        self.native.setFrame(frame, display=True, animate=False)
+        self.native.setFrame(frame, display=True, animate=True)
 
     def set_app(self, app):
         pass
@@ -209,7 +233,10 @@ class Window:
         # Render of the content with a 0 sized viewport; this will
         # establish the minimum possible content size. Use that to enforce
         # a minimum window size.
-        self.interface.content.style.layout(self.interface.content, Viewport(0, 0))
+        self.interface.content.style.layout(
+            self.interface.content,
+            CocoaViewport(view=None),
+        )
         self._min_width_constraint.constant = self.interface.content.layout.width
         self._min_height_constraint.constant = self.interface.content.layout.height
 
@@ -242,3 +269,9 @@ class Window:
 
     def save_file_dialog(self, title, suggested_filename, file_types):
         return dialogs.save_file(self.interface, title, suggested_filename, file_types)
+
+    def open_file_dialog(self, title, initial_directory, file_types, multiselect):
+        return dialogs.open_file(self.interface, title, file_types, multiselect)
+
+    def select_folder_dialog(self, title, initial_directory, multiselect):
+        return dialogs.select_folder(self.interface, title, multiselect)

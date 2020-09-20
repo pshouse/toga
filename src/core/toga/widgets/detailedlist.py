@@ -26,12 +26,26 @@ class DetailedList(Widget):
         >>>
         >>> dlist = toga.DetailedList(data=['Item 0', 'Item 1', 'Item 2'], on_select=selection_handler)
     """
+
     MIN_HEIGHT = 100
     MIN_WIDTH = 100
 
-    def __init__(self, id=None, data=None, on_delete=None, on_refresh=None, on_select=None, style=None, factory=None):
+    def __init__(
+        self,
+        id=None,
+        data=None,
+        on_delete=None,
+        on_refresh=None,
+        on_select=None,
+        style=None,
+        factory=None,
+    ):
         super().__init__(id=id, style=style, factory=factory)
         self._data = None
+        self._on_delete = None
+        self._on_refresh = None
+        # at least _on_select must be defined before setting data for the Gtk impl
+        self._on_select = None
         self._impl = self.factory.DetailedList(interface=self)
 
         self.data = data
@@ -52,9 +66,9 @@ class DetailedList(Widget):
     @data.setter
     def data(self, data):
         if data is None:
-            self._data = ListSource(data=[], accessors=['icon', 'label1', 'label2'])
+            self._data = ListSource(data=[], accessors=["icon", "title", "subtitle"])
         elif isinstance(data, (list, tuple)):
-            self._data = ListSource(data=data, accessors=['icon', 'label1', 'label2'])
+            self._data = ListSource(data=data, accessors=["icon", "title", "subtitle"])
         else:
             self._data = data
 
@@ -117,6 +131,14 @@ class DetailedList(Widget):
         self._impl.set_on_refresh(self._on_refresh)
 
     @property
+    def selection(self):
+        """The current selection of the table.
+
+        A value of None indicates no selection.
+        """
+        return self._impl.get_selection()
+
+    @property
     def on_select(self):
         """ The handler function must accept two arguments, widget and row.
 
@@ -129,4 +151,3 @@ class DetailedList(Widget):
     def on_select(self, handler: callable):
         self._on_select = wrapped_handler(self, handler)
         self._impl.set_on_select(self._on_select)
-

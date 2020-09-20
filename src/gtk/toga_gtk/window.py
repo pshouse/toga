@@ -1,23 +1,30 @@
-from gi.repository import Gtk
-from travertino.layout import Viewport
-
 from toga.command import GROUP_BREAK, SECTION_BREAK
 from toga.handlers import wrapped_handler
 
 from . import dialogs
+from .libs import Gtk
 
 
 class GtkViewport:
     def __init__(self, native):
         self.native = native
-        self.dpi = 96  # FIXME This is almost certainly wrong...
+        # GDK/GTK always renders at 96dpi. When HiDPI mode is enabled, it is
+        # managed at the compositor level. See
+        # https://wiki.archlinux.org/index.php/HiDPI#GDK_3_(GTK_3) for details
+        self.dpi = 96
+        self.baseline_dpi = self.dpi
 
     @property
     def width(self):
+        # Treat `native=None` as a 0x0 viewport.
+        if self.native is None:
+            return 0
         return self.native.get_allocated_width()
 
     @property
     def height(self):
+        if self.native is None:
+            return 0
         return self.native.get_allocated_height()
 
 
@@ -31,8 +38,13 @@ class Window:
 
     def create(self):
         self.native = self._IMPL_CLASS()
-        self.native.connect("delete-event", self.on_close)
+        self.native._impl = self
+
+        self.native.connect("delete-event", self.gtk_on_close)
         self.native.set_default_size(self.interface.size[0], self.interface.size[1])
+
+        # Set the window deletable/closeable.
+        self.native.set_deletable(self.interface.closeable)
 
         self.toolbar_native = None
         self.toolbar_items = None
@@ -50,7 +62,7 @@ class Window:
         else:
             for cmd, item_impl in self.toolbar_items.items():
                 self.toolbar_native.remove(item_impl)
-                cmd._impl._widgets.remove(item_impl)
+                cmd._impl.native.remove(item_impl)
 
         self.toolbar_native.set_style(Gtk.ToolbarStyle.BOTH)
         for cmd in self.interface.toolbar:
@@ -62,20 +74,20 @@ class Window:
                 item_impl.set_draw(False)
             else:
                 item_impl = Gtk.ToolButton()
-                cmd_impl = cmd.bind(self.interface.factory)
-                icon_impl = cmd_impl.icon.bind(self.interface.factory)
+                icon_impl = cmd.icon.bind(self.interface.factory)
                 item_impl.set_icon_widget(icon_impl.native_32)
                 item_impl.set_label(cmd.label)
                 item_impl.set_tooltip_text(cmd.tooltip)
                 item_impl.connect("clicked", wrapped_handler(cmd, cmd.action))
-                cmd._widgets.append(item_impl)
+                cmd._impl.native.append(item_impl)
             self.toolbar_items[cmd] = item_impl
             self.toolbar_native.insert(item_impl, -1)
 
     def set_content(self, widget):
         # Construct the top-level layout, and set the window's view to
         # the be the widget's native object.
-        self.layout = Gtk.VBox()
+        # Alaway avoid using deprecated widgets and methods.
+        self.layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         if self.toolbar_native:
             self.layout.pack_start(self.toolbar_native, False, False, 0)
@@ -99,15 +111,22 @@ class Window:
         # Now that the content is visible, we can do our initial hinting,
         # and use that as the basis for setting the minimum window size.
         self.interface.content._impl.rehint()
-        self.interface.content.style.layout(self.interface.content, Viewport(0, 0))
+        self.interface.content.style.layout(
+            self.interface.content,
+            GtkViewport(native=None)
+        )
         self.interface.content._impl.min_width = self.interface.content.layout.width
         self.interface.content._impl.min_height = self.interface.content.layout.height
 
-    def on_close(self, widget, data):
+    def gtk_on_close(self, widget, data):
+        if self.interface.on_close:
+            self.interface.on_close()
+
+    def on_close(self, *args):
         pass
 
     def on_size_allocate(self, widget, allocation):
-        # print("ON WINDOW SIZE ALLOCATION", allocation.width, allocation.height)
+        #  ("ON WINDOW SIZE ALLOCATION", allocation.width, allocation.height)
         pass
 
     def close(self):
@@ -150,9 +169,9 @@ class Window:
         '''
         return dialogs.open_file(self.interface, title, file_types, multiselect)
 
-    def select_folder_dialog(self, title, initial_directory):
+    def select_folder_dialog(self, title, initial_directory, multiselect):
         '''Note that at this time, GTK does not recommend setting the initial
         directory. This function explicitly chooses not to pass it along:
         https://developer.gnome.org/gtk3/stable/GtkFileChooser.html#gtk-file-chooser-set-current-folder
         '''
-        return dialogs.select_folder(self.interface, title)
+        return dialogs.select_folder(self.interface, title, multiselect)

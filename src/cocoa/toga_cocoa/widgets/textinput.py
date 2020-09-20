@@ -1,7 +1,12 @@
-from rubicon.objc import objc_method, NSObject
 from travertino.size import at_least
 
-from toga_cocoa.libs import NSTextAlignment, NSTextField, NSTextFieldSquareBezel
+from toga_cocoa.libs import (
+    NSObject,
+    NSTextAlignment,
+    NSTextField,
+    NSTextFieldSquareBezel,
+    objc_method
+)
 
 from .base import Widget
 
@@ -39,9 +44,9 @@ class TextInput(Widget):
     def set_alignment(self, value):
         self.native.alignment = NSTextAlignment(value)
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def get_value(self):
         return str(self.native.stringValue)
@@ -52,7 +57,9 @@ class TextInput(Widget):
     def rehint(self):
         # Height of a text input is known and fixed.
         # Width must be > 100
-        # print("REHINT TextInput", self, self._impl.intrinsicContentSize().width, self._impl.intrinsicContentSize().height)
+        # print("REHINT TextInput", self,
+        #     self._impl.intrinsicContentSize().width, self._impl.intrinsicContentSize().height
+        # )
         self.interface.intrinsic.width = at_least(self.interface.MIN_WIDTH)
         self.interface.intrinsic.height = self.native.intrinsicContentSize().height
 

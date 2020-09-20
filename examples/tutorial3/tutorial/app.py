@@ -1,5 +1,5 @@
 import toga
-from toga.style.pack import Pack, ROW, CENTER, COLUMN
+from toga.style.pack import CENTER, COLUMN, ROW, Pack
 
 
 class Graze(toga.App):
@@ -8,7 +8,7 @@ class Graze(toga.App):
 
         self.webview = toga.WebView(style=Pack(flex=1))
         self.url_input = toga.TextInput(
-            initial='https://github.com/',
+            initial='https://beeware.org/',
             style=Pack(flex=1)
         )
 
@@ -43,7 +43,7 @@ class Graze(toga.App):
 
 
 def main():
-    return Graze('Graze', 'org.pybee.graze')
+    return Graze('Graze', 'org.beeware.graze')
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import asyncio
 import random
 
 import toga
-from toga.constants import ROW, COLUMN
+from toga.constants import COLUMN, ROW
 from toga.style import Pack
 
 from .bot import Eliza
@@ -81,7 +81,7 @@ class BeelizaApp(toga.App):
 
 
 def main():
-    return BeelizaApp('Beeliza', 'org.pybee.beeliza')
+    return BeelizaApp('Beeliza', 'org.beeware.beeliza')
 
 
 if __name__ == '__main__':

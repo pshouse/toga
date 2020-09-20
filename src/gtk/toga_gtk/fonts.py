@@ -1,24 +1,8 @@
-from toga.constants import ITALIC, OBLIQUE, SMALL_CAPS, BOLD, SYSTEM
-import gi
+from toga.constants import BOLD, ITALIC, OBLIQUE, SMALL_CAPS, SYSTEM
 
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-
-try:
-    gi.require_version("Pango", "1.0")
-    from gi.repository import Pango
-except ImportError:
-    Pango = None
+from .libs import Pango
 
 _FONT_CACHE = {}
-
-
-class Measure(Gtk.Widget):
-    """Gtk.Widget for Font.measure in order to create a Pango Layout
-    """
-
-    def create(self):
-        pass
 
 
 class Font:
@@ -27,7 +11,7 @@ class Font:
 
         if Pango is None:
             raise RuntimeError(
-                "'from gi.repository import Pango' failed; may need to install gir1.2-pango-1.0."
+                "'from gi.repository import Pango' failed; you may need to install gir1.2-pango-1.0."
             )
 
         try:
@@ -65,9 +49,9 @@ class Font:
 
         self.native = font
 
-    def measure(self, text, tight=False):
-        measure_widget = Measure()
-        layout = measure_widget.create_pango_layout(text)
+    def measure(self, text, widget, tight=False):
+        layout = widget.create_pango_layout(text)
+
         layout.set_font_description(self.native)
         ink, logical = layout.get_extents()
         if tight:

@@ -2,9 +2,8 @@ from rubicon.objc import CGSize
 from travertino.size import at_least
 
 from toga_iOS.colors import native_color
-from toga_iOS.libs import UILabel, NSTextAlignment, NSLineBreakByWordWrapping
-
-from .base import Widget
+from toga_iOS.libs import NSLineBreakByWordWrapping, NSTextAlignment, UILabel
+from toga_iOS.widgets.base import Widget
 
 
 class Label(Widget):
@@ -26,9 +25,9 @@ class Label(Widget):
         if value:
             self.native.textColor = native_color(value)
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def set_text(self, value):
         self.native.text = self.interface.text

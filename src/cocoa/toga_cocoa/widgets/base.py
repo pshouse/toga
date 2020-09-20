@@ -1,4 +1,8 @@
+from travertino.constants import TRANSPARENT
+
 from toga_cocoa.constraints import Constraints
+from toga_cocoa.libs import NSColor
+from toga_cocoa.colors import native_color
 
 
 class Widget:
@@ -6,11 +10,15 @@ class Widget:
         self.interface = interface
         self.interface._impl = self
         self._container = None
+        self._viewport = None
         self.constraints = None
-        self.viewport = None
         self.native = None
         self.create()
         self.interface.style.reapply()
+        self.set_enabled(self.interface.enabled)
+
+    def create(self):
+        raise NotImplementedError()
 
     def set_app(self, app):
         pass
@@ -24,19 +32,37 @@ class Widget:
 
     @container.setter
     def container(self, container):
-        self._container = container
-        self._container.native.addSubview(self.native)
-        self.constraints.container = container
+        if self.container:
+            if container:
+                raise RuntimeError('Already have a container')
+            else:
+                # existing container should be removed
+                self.constraints.container = None
+                self._container = None
+                self.native.removeFromSuperview()
+        elif container:
+            # setting container
+            self._container = container
+            self._container.native.addSubview(self.native)
+            self.constraints.container = container
 
         for child in self.interface.children:
             child._impl.container = container
 
         self.rehint()
 
+    @property
+    def viewport(self):
+        return self._viewport
+
+    @viewport.setter
+    def viewport(self, viewport):
+        self._viewport = viewport
+
     def set_enabled(self, value):
         self.native.enabled = self.interface.enabled
 
-    ### APPLICATOR
+    # APPLICATOR
 
     def set_bounds(self, x, y, width, height):
         # print("SET BOUNDS ON", self.interface, x, y, width, height)
@@ -46,10 +72,8 @@ class Widget:
         pass
 
     def set_hidden(self, hidden):
-        if self._container:
-            for view in self._container._impl.subviews:
-                if child._impl == view:
-                    view.setHidden(hidden)
+        if self.native:
+            self.native.setHidden(hidden)
 
     def set_font(self, font):
         pass
@@ -58,13 +82,28 @@ class Widget:
         pass
 
     def set_background_color(self, color):
-        pass
+        if color is TRANSPARENT:
+            self.native.backgroundColor = NSColor.clearColor
+            self.native.drawsBackground = False
+        else:
+            self.native.backgroundColor = native_color(color)
+            self.native.drawsBackground = True
 
-    ### INTERFACE
+    # INTERFACE
 
     def add_child(self, child):
-        if self.container:
+
+        if self.viewport:
+            # we are the the top level NSView
+            child.container = self
+        else:
             child.container = self.container
+
+    def insert_child(self, index, child):
+        self.add_child(child)
+
+    def remove_child(self, child):
+        child.container = None
 
     def add_constraints(self):
         self.native.translatesAutoresizingMaskIntoConstraints = False

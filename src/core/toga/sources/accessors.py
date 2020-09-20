@@ -1,8 +1,8 @@
 import re
 
+NON_ACCESSOR_CHARS = re.compile(r'[^\w ]')
+WHITESPACE = re.compile(r'\s+')
 
-NON_ACCESSOR_CHARS = re.compile('[^\w ]')
-WHITESPACE = re.compile('\s+')
 
 def to_accessor(heading):
     """Convert a human-readable heading into a data attribute accessor
@@ -31,6 +31,7 @@ def to_accessor(heading):
 
     return value
 
+
 def build_accessors(headings, accessors):
     """Convert a list of headings (with accessor overrides) to a finalised list of accessors.
 
@@ -41,7 +42,7 @@ def build_accessors(headings, accessors):
            a string providing the override name for the accessor,
            or None, indicating the default accessor should be used.
          - A dictionary from the heading names to the accessor. If
-           a heading name isn't present in the dictonary, the default
+           a heading name isn't present in the dictionary, the default
            accessor will be used
          - Otherwise, a final list of ready-to-use accessors.
 

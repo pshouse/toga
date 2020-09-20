@@ -1,4 +1,4 @@
-from toga_cocoa.libs import *
+from toga_cocoa.libs import NSObject, NSSize, NSSplitView, objc_method
 from toga_cocoa.window import CocoaViewport
 
 from .base import Widget
@@ -8,7 +8,7 @@ class TogaSplitViewDelegate(NSObject):
     @objc_method
     def splitView_resizeSubviewsWithOldSize_(self, view, size: NSSize) -> None:
         if size.width and size.height:
-            count = len(self.interface.content)
+            # count = len(self.interface.content)
 
             # Turn all the weights into a fraction of 1.0
             total = sum(self.interface._weight)
@@ -50,7 +50,8 @@ class SplitContainer(Widget):
         # Add the layout constraints
         self.add_constraints()
 
-    def add_content(self, position, widget):
+    def add_content(self, position, widget, flex):
+        # TODO: add flex option to the implementation
         widget.viewport = CocoaViewport(widget.native)
 
         for child in widget.interface.children:

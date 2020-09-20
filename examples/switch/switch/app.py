@@ -1,15 +1,14 @@
 import toga
+from toga.constants import COLUMN
 from toga.style import Pack
-from toga.constants import COLUMN, ROW
+
 
 class SwitchApp(toga.App):
 
     def startup(self):
         # Window class
         #   Main window of the application with title and size
-        self.main_window = toga.MainWindow(title=self.name, size=(300, 150))
-
-        switch_style = Pack(padding=24)
+        self.main_window = toga.MainWindow(title=self.name, size=(350, 200))
 
         # Add the content on the main window
         self.main_window.content = toga.Box(
@@ -38,5 +37,5 @@ class SwitchApp(toga.App):
 def main():
     # Application class
     #   App name and namespace
-    app = SwitchApp('Switches', 'org.pybee.helloworld')
+    app = SwitchApp('Switches', 'org.beeware.helloworld')
     return app

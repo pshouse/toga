@@ -1,4 +1,4 @@
-from rubicon.objc import objc_method, CGSize, SEL
+from rubicon.objc import SEL, CGSize, objc_method
 from travertino.size import at_least
 
 from toga_iOS.libs import (
@@ -8,8 +8,7 @@ from toga_iOS.libs import (
     UIControlStateDisabled,
     UIControlStateNormal
 )
-
-from .base import Widget
+from toga_iOS.widgets.base import Widget
 
 
 class TogaButton(UIButton):

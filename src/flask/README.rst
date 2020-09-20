@@ -1,39 +1,61 @@
 toga-flask
 ==========
 
-A Flask backend for the `Toga widget toolkit`_.
+A `Flask <https://flask.palletsprojects.com>`__ backend for the `Toga widget
+toolkit <https://beeware.org/toga>`__.
 
-**Toga requires Python 3**
+This package isn't much use by itself; it needs to be combined with `the core
+Toga library <https://pypi.python.org/pypi/toga-core>`__ and `the Toga Web
+library <https://pypi.python.org/pypi/toga-web>`__.
 
-**THIS IS A PLACEHOLDER PROJECT**
+For more details, see the `Toga project on Github
+<https://github.com/beeware/toga>`__.
 
-At present, it has no functionality - it exists purely to reserve the PyPI namespace.
+Prerequisites
+~~~~~~~~~~~~~
 
-This package isn't much use by itself; it needs to be combined with `the core Toga library`_.
+This backend requires Flask 1.1 as a minimum requirement.
 
-For more details, see the `Toga project on Github`_.
+Usage
+~~~~~
+
+Toga Flask defines a ``TogaApp`` class that can be used to mount a Toga Web
+instance in a Flask app. If you have Toga application named `myapp`, Flask
+deployment is acheived by putting the following into ``flaskapp.py``::
+
+    from flask import Flask
+    flask_app = Flask(__name__)
+
+    from toga_flask import TogaApp
+
+    from myapp import app
+
+    TogaApp(app).route(flask_app, '/')
+
+This will mount the Toga app at `/`. You can mount the app at any URL you wish,
+and you can also add other routes for other views.
+
+The app can then be executed with::
+
+    $ FLASK_APP=flaskapp.py FLASK_DEBUG=1 flask run
+
+This assumes a standard Toga app layout, where the application `myapp` has a
+submodule `app.py` that defines a `main()` method.
 
 Community
 ---------
 
-Toga is part of the `BeeWare suite`_. You can talk to the community through:
+Toga is part of the `BeeWare suite <http://beeware.org>`__. You can talk to the
+community through:
 
-* `@pybeeware on Twitter`_
+* `@pybeeware on Twitter <https://twitter.com/pybeeware>`__
 
-* The `pybee/general`_ channel on Gitter.
+* The `beeware/general <https://gitter.im/beeware/general>`__ channel on Gitter.
 
 Contributing
 ------------
 
-If you experience problems with this backend, `log them on GitHub`_. If you
-want to contribute code, please `fork the code`_ and `submit a pull request`_.
-
-.. _Toga widget toolkit: http://pybee.org/toga
-.. _the core Toga library: https://pypi.python.org/pypi/toga-core
-.. _Toga project on Github: https://github.com/pybee/toga
-.. _BeeWare suite: http://pybee.org
-.. _@pybeeware on Twitter: https://twitter.com/pybeeware
-.. _pybee/general: https://gitter.im/pybee/general
-.. _log them on Github: https://github.com/pybee/toga/issues
-.. _fork the code: https://github.com/pybee/toga
-.. _submit a pull request: https://github.com/pybee/toga/pulls
+If you experience problems with this backend, `log them on GitHub
+<https://github.com/beeware/toga/issues>`_. If you want to contribute code,
+please `fork the code <https://github.com/beeware/toga>`__ and `submit a pull
+request <https://github.com/beeware/toga/pulls>`_.

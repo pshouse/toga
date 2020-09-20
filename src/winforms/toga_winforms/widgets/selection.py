@@ -1,5 +1,6 @@
-from toga_winforms.libs import WinForms
 from travertino.size import at_least
+
+from toga_winforms.libs import WinForms
 
 from .base import Widget
 
@@ -9,9 +10,9 @@ class TogaComboBox(WinForms.ComboBox):
         super().__init__()
         self.interface = interface
         self.DropDownStyle = WinForms.ComboBoxStyle.DropDownList
-        self.SelectedIndexChanged += self.on_select
+        self.SelectedIndexChanged += self.winforms_selected_index_changed
 
-    def on_select(self, sender, event):
+    def winforms_selected_index_changed(self, sender, event):
         if self.interface.on_select:
             self.interface.on_select(self.interface)
 
@@ -32,7 +33,7 @@ class Selection(Widget):
 
     def select_item(self, item):
         index = self.native.FindString(item)
-        self.native.SelectedItem = index
+        self.native.SelectedIndex = index
 
     def get_selected_item(self):
         return self.native.SelectedItem

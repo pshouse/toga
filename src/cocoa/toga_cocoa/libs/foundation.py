@@ -1,10 +1,9 @@
 ##########################################################################
 # System/Library/Frameworks/Foundation.framework
 ##########################################################################
-from ctypes import *
-from ctypes import util
+from ctypes import c_bool, cdll, util
 
-from rubicon.objc import *
+from rubicon.objc import NSPoint, NSRect, ObjCClass
 
 ######################################################################
 foundation = cdll.LoadLibrary(util.find_library('Foundation'))

@@ -1,6 +1,33 @@
-from rubicon.objc import *
-
-from toga_cocoa.libs import *
+from toga_cocoa.libs import (
+    SEL,
+    NSClipView,
+    NSEvent,
+    NSEventPhaseEnded,
+    NSLayoutAttributeCenterX,
+    NSLayoutAttributeCenterY,
+    NSLayoutAttributeHeight,
+    NSLayoutAttributeNotAnAttribute,
+    NSLayoutAttributeTop,
+    NSLayoutAttributeWidth,
+    NSLayoutConstraint,
+    NSLayoutRelationEqual,
+    NSMakePoint,
+    NSMakeRect,
+    NSNotificationCenter,
+    NSPoint,
+    NSProgressIndicator,
+    NSProgressIndicatorSpinningStyle,
+    NSRect,
+    NSScrollElasticityAllowed,
+    NSScrollView,
+    NSView,
+    NSViewBoundsDidChangeNotification,
+    ObjCInstance,
+    core_graphics,
+    kCGScrollEventUnitLine,
+    objc_method,
+    send_super
+)
 
 HEADER_HEIGHT = 45.0
 
@@ -20,10 +47,6 @@ class RefreshableClipView(NSClipView):
             )
 
         return constrained
-
-    @objc_method
-    def isFlipped(self):
-        return True
 
     @objc_method
     def documentRect(self) -> NSRect:
@@ -94,7 +117,7 @@ class RefreshableScrollView(NSScrollView):
 
         # Create spinner
         self.refreshIndicator = NSProgressIndicator.alloc().init()
-        self.refreshIndicator.style = NSProgressIndicatorSpinningStyle;
+        self.refreshIndicator.style = NSProgressIndicatorSpinningStyle
         self.refreshIndicator.translatesAutoresizingMaskIntoConstraints = False
         self.refreshIndicator.displayedWhenStopped = True
         self.refreshIndicator.usesThreadedAnimation = True
@@ -118,7 +141,7 @@ class RefreshableScrollView(NSScrollView):
         self.contentView.addSubview(self.refreshView)
 
         # set layout constraints
-        indicatorHCenter = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        indicatorHCenter = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # noqa: E501
             self.refreshIndicator, NSLayoutAttributeCenterX,
             NSLayoutRelationEqual,
             self.refreshView, NSLayoutAttributeCenterX,
@@ -126,7 +149,7 @@ class RefreshableScrollView(NSScrollView):
         )
         self.refreshView.addConstraint(indicatorHCenter)
 
-        indicatorVCenter = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        indicatorVCenter = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # noqa: E501
             self.refreshIndicator, NSLayoutAttributeCenterY,
             NSLayoutRelationEqual,
             self.refreshView, NSLayoutAttributeCenterY,
@@ -134,7 +157,7 @@ class RefreshableScrollView(NSScrollView):
         )
         self.refreshView.addConstraint(indicatorVCenter)
 
-        refreshWidth = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        refreshWidth = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # noqa: E501
             self.refreshView, NSLayoutAttributeWidth,
             NSLayoutRelationEqual,
             self.contentView, NSLayoutAttributeWidth,
@@ -142,7 +165,7 @@ class RefreshableScrollView(NSScrollView):
         )
         self.contentView.addConstraint(refreshWidth)
 
-        refreshHeight = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        refreshHeight = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # noqa: E501
             self.refreshView, NSLayoutAttributeHeight,
             NSLayoutRelationEqual,
             None, NSLayoutAttributeNotAnAttribute,
@@ -150,7 +173,7 @@ class RefreshableScrollView(NSScrollView):
         )
         self.contentView.addConstraint(refreshHeight)
 
-        refreshHeight = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        refreshHeight = NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(  # noqa: E501
             self.refreshView, NSLayoutAttributeTop,
             NSLayoutRelationEqual,
             self.contentView, NSLayoutAttributeTop,
@@ -159,7 +182,7 @@ class RefreshableScrollView(NSScrollView):
         self.contentView.addConstraint(refreshHeight)
 
         # Scroll to top
-        self.contentView.scrollToPoint(NSMakePoint(contentRect.origin.x, 0));
+        self.contentView.scrollToPoint(NSMakePoint(contentRect.origin.x, 0))
         self.reflectScrolledClipView(self.contentView)
 
     # Detecting scroll

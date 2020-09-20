@@ -128,6 +128,7 @@ class ListSourceTests(TestCase):
         class MyObject:
             def __init__(self, info):
                 self.info = info
+
             def __str__(self):
                 return "string value %s" % self.info
 
@@ -402,7 +403,7 @@ class ListSourceTests(TestCase):
         self.assertEqual(source[1].val1, 'third')
         self.assertEqual(source[1].val2, 333)
 
-        listener.remove.assert_called_once_with(item=row)
+        listener.remove.assert_called_once_with(item=row, index=1)
 
     def test_get_row_index(self):
         "You can get the index of any row within a list source"

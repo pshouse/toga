@@ -1,9 +1,9 @@
 from random import choice
 
 import toga
-from toga.style import Pack
-from toga.constants import ROW, COLUMN
+from toga.constants import COLUMN, ROW
 from toga.sources import Source
+from toga.style import Pack
 
 bee_movies = [
     ('The Secret Life of Bees', '2008', '7.3', 'Drama'),
@@ -37,16 +37,20 @@ class MovieSource(Source):
     def __getitem__(self, index):
         return self._movies[index]
 
+    def index(self, entry):
+        return self._movies.index(entry)
+
     def add(self, entry):
         movie = Movie(*entry)
         self._movies.append(movie)
         self._movies.sort(key=lambda m: m.year)
-        self._notify('insert', index=len(self._movies) - 1, item=movie)
+        self._notify('insert', index=self._movies.index(movie), item=movie)
 
-    def remove(self, index):
-        item = self._movies[index]
+    def remove(self, item):
+        index = self.index(item)
+        self._notify('pre_remove', index=index, item=item)
         del self._movies[index]
-        self._notify('remove', item=item)
+        self._notify('remove', index=index, item=item)
 
     def clear(self):
         self._movies = []
@@ -55,29 +59,62 @@ class MovieSource(Source):
 
 class GoodMovieSource(Source):
     # A data source that piggy-backs on a MovieSource, but only
-    # exposes *good* movies (rating > 7.5)
+    # exposes *good* movies (rating > 7.0)
     def __init__(self, source):
         super().__init__()
         self._source = source
         self._source.add_listener(self)
+        self._removals = {}
 
     # Implement the filtering of the underlying data source
     def _filtered(self):
-        return (m for m in self._source._movies if m.rating > 7.0)
+        return sorted(
+            (
+                m
+                for m in self._source._movies
+                if m.rating > 7.0
+            ),
+            key=lambda m: -m.rating
+        )
 
     # Methods required by the ListSource interface
     def __len__(self):
         return len(list(self._filtered()))
 
     def __getitem__(self, index):
-        return sorted(self._filtered(), key=lambda m: -m.rating)[index]
+        return self._filtered()[index]
 
-    # A listener that passes on all notifications
+    def index(self, entry):
+        return self._filtered().index(entry)
+
+    # A listener that passes on all notifications, but only if the apply
+    # to the filtered data source
     def insert(self, index, item):
-        self._notify('insert', index=index, item=item)
+        # If the item exists in the filtered list, propegate the notification
+        for i, filtered_item in enumerate(self._filtered()):
+            if filtered_item == item:
+                # Propegate the insertion, with the position in the
+                # *filtered* list.
+                self._notify('insert', index=i, item=item)
 
-    def remove(self, item):
-        self._notify('remove', item=item)
+    def pre_remove(self, index, item):
+        # If the item exists in the filtered list, track that it is being
+        # removed; but don't propegate the removal notification until it has
+        # been removed from the base data source
+        for i, filtered_item in enumerate(self._filtered()):
+            if filtered_item == item:
+                # Track that the object *was* in the data source
+                self._removals[item] = i
+
+    def remove(self, index, item):
+        # If the removed item previously existed in the filtered data source,
+        # propegate the removal notification.
+        try:
+            i = self._removals.pop(item)
+            self._notify('remove', index=i, item=item)
+        except KeyError:
+            # object wasn't previously in the data source
+            pass
 
     def clear(self):
         self._notify('clear')
@@ -93,8 +130,10 @@ class ExampleTableSourceApp(toga.App):
         self.table1.data.add(choice(bee_movies))
 
     def delete_handler(self, widget, **kwargs):
-        if len(self.table1.data) > 0:
-            self.table1.data.remove(0)
+        if self.table1.selection:
+            self.table1.data.remove(self.table1.selection)
+        elif len(self.table1.data) > 0:
+            self.table1.data.remove(self.table1.data[0])
         else:
             print('Table is empty!')
 
@@ -154,7 +193,7 @@ class ExampleTableSourceApp(toga.App):
 
 
 def main():
-    return ExampleTableSourceApp('Table Source', 'org.pybee.widgets.table_source')
+    return ExampleTableSourceApp('Table Source', 'org.beeware.widgets.table_source')
 
 
 if __name__ == '__main__':
